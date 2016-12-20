@@ -81,6 +81,8 @@ TMPOUT := $(if $(KBUILD_EXTMOD),$(firstword $(KBUILD_EXTMOD))/)
 # Usage: option = $(call try-run, $(CC)...-o "$$TMP",option-ok,otherwise)
 # Exit code chooses option. "$$TMP" is can be used as temporary file and
 # is automatically cleaned up.
+# "set" is a command to set/show the input/output env of shell, "-e" means exit
+# immediately if a command exits with a non-zero status
 try-run = $(shell set -e;		\
 	TMP="$(TMPOUT).$$$$.tmp";	\
 	TMPO="$(TMPOUT).$$$$.o";	\
@@ -104,7 +106,10 @@ as-instr = $(call try-run,\
 
 # cc-option
 # Usage: cflags-y += $(call cc-option,-march=winchip-c6,-march=i586)
-
+# $(call cc-option, <use this option if test ok>, <use this option if test fail>)
+# -x <language>: Specify explicitly the language for the following input files
+#		(rather than letting the compiler choose a default based on the
+#		file name suffix)
 cc-option = $(call try-run,\
 	$(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(1) -c -xc /dev/null -o "$$TMP",$(1),$(2))
 

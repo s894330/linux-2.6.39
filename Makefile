@@ -14,9 +14,18 @@ NAME = Flesh-Eating Bats with Fangs
 # o  use make's built-in rules and variables
 #    (this increases performance and avoids hard-to-debug behaviour);
 # o  print "Entering directory ...";
+# MAKEFLAGS是用來傳遞給子make的參數列表，命令列中給定的參數也會加進到MAKEFLAGS變
+# 數中。
+# -r: no builtin rules
+# -R: no builtin variables
 MAKEFLAGS += -rR --no-print-directory
 
 # Avoid funny character set dependencies
+# LC_ALL: 一次設定所有的locale環境
+# LC_COLLATE: 字元順序與字串比較
+# LC_NUMERIC: 數字顯式格式
+# 設定C local表示程式的表現會與傳統的 C 語言中一樣，使用英文做訊息輸出，只能處理
+# 英文等 ASCII 碼
 unexport LC_ALL
 LC_COLLATE=C
 LC_NUMERIC=C
@@ -41,6 +50,7 @@ export LC_COLLATE LC_NUMERIC
 # To put more focus on warnings, be less verbose as default
 # Use 'make V=1' to see the full commands
 
+# 如果command line中有定義"V"，就把KBUILD_VERBOSE的值設定V的值
 ifeq ("$(origin V)", "command line")
   KBUILD_VERBOSE = $(V)
 endif
@@ -111,6 +121,8 @@ PHONY := _all
 _all:
 
 # Cancel implicit rules on top Makefile
+# 因為Makefile一定存在，防止make為了建造makefile而去尋找隱含命令，此舉可以增加
+# 效率
 $(CURDIR)/Makefile Makefile: ;
 
 ifneq ($(KBUILD_OUTPUT),)
@@ -121,8 +133,11 @@ KBUILD_OUTPUT := $(shell cd $(KBUILD_OUTPUT) && /bin/pwd)
 $(if $(KBUILD_OUTPUT),, \
      $(error output directory "$(saved-output)" does not exist))
 
+# MAKECMDGOALS 紀錄了命令列中所指定的make目標
 PHONY += $(MAKECMDGOALS) sub-make
 
+# 此規則的命令為":"，這個命令對shell來說就是no-op，整條命令的意思是：
+# "do nothing, and don't tell."
 $(filter-out _all sub-make $(CURDIR)/Makefile, $(MAKECMDGOALS)) _all: sub-make
 	$(Q)@:
 
@@ -154,6 +169,7 @@ objtree		:= $(CURDIR)
 src		:= $(srctree)
 obj		:= $(objtree)
 
+# VPATH 為Makefile中所有文件的搜索路徑，包括規則的依賴文件和目標文件
 VPATH		:= $(srctree)$(if $(KBUILD_EXTMOD),:$(KBUILD_EXTMOD))
 
 export srctree objtree VPATH
@@ -237,8 +253,16 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
-HOSTCXXFLAGS = -O2
+# -Wall: enables all the warnings about constructions that some users consider
+# 	questionable
+# -Wmissing-prototypes: Warn if a global function is defined without a previous
+# 			prototype declaration
+# -Wstrict-prototypes: Warn if a function is declared or defined without
+# 			specifying the argument types
+# -std=gnu89: 使用c89規範加上gcc自己的擴展
+#HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -std=gnu89
+#HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -355,6 +379,24 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include -Iinclude \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
+# -Wundef: Warn if an undefined identifier is evaluated in an ‘#if’ directive
+# -Wno-trigraphs: some trigraphs in comments may affect the meaning of the
+# 		program (such as: ??/), "-Wall" will turn on this type of
+# 		warning, here we specify -Wno-trigraphs to disable this warning
+# -fno-strict-aliasing: allow alias between different type (ex: int <-> double)
+# -fno-common: specifies that the compiler should place uninitialized global
+# 		variables in the data section of the object file, rather than
+# 		generating them as common blocks. This has the effect that if
+# 		the same variable is declared (without extern) in two different
+# 		compilations, you get a multiple-definition. It is useful on
+# 		targets for which it provides better performance
+# -Werror-implicit-function-declaration: Erro when using a function for which
+# 		the compiler has not seen a declaration ("prototype") yet
+# -Wno-format-security: disable warnings about calls to printf and scanf
+# 		functions where the format string is not a string literal and
+# 		there are no format arguments, as in printf (foo)
+# -fno-delete-null-pointer-checks: means do not "delete the null pointer check"
+# 		which used in optimization
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
@@ -499,6 +541,7 @@ endif # KBUILD_EXTMOD
 
 ifeq ($(dot-config),1)
 # Read in config
+# "-" means ignore the error when execute cmd
 -include include/config/auto.conf
 
 ifeq ($(KBUILD_EXTMOD),)
