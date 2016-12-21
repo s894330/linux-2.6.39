@@ -56,29 +56,80 @@ endif
 # $(call cc-option... ) handles gcc -W.. options which
 # are not supported by all versions of the compiler
 ifdef KBUILD_ENABLE_EXTRA_GCC_CHECKS
+# enables some extra warning flags that are not enabled by ‘-Wall’
 KBUILD_EXTRA_WARNINGS := -Wextra
+# enables all unsed-xxx warning but "unused-parameter""
 KBUILD_EXTRA_WARNINGS += -Wunused -Wno-unused-parameter
+# Warn if any functions that return structures or unions are defined or called
 KBUILD_EXTRA_WARNINGS += -Waggregate-return
+# Warn whenever a function call is cast to a non-matching type. For example,
+# warn if int malloc() is cast to anything *.
 KBUILD_EXTRA_WARNINGS += -Wbad-function-cast
+# Warn whenever a pointer is cast so as to remove a type qualifier from the
+# target type. For example, warn if a const char * is cast to an ordinary char *
 KBUILD_EXTRA_WARNINGS += -Wcast-qual
+# Warn whenever a pointer is cast such that the required alignment of the target
+# is increased. For example, warn if a char * is cast to an int * on machines
+# where integers can only be accessed at two- or four-byte boundaries
 KBUILD_EXTRA_WARNINGS += -Wcast-align
+# Warn for implicit conversions that may alter a value. This includes
+# conversions between real and integer, like abs (x) when x is double
 KBUILD_EXTRA_WARNINGS += -Wconversion
+# Warn if a requested optimization is disabled. This warning does not indicate
+# that there is anything wrong with your code; it merely indicates that
+# GCC’s optimizers are unable to handle the code effectively. Often, the problem
+# is that your code is too big or too complex; GCC refuses to optimize programs
+# when the optimization itself is likely to take inordinate amounts of time
 KBUILD_EXTRA_WARNINGS += -Wdisabled-optimization
+# Warn about suspicious uses of logical operators in expressions
 KBUILD_EXTRA_WARNINGS += -Wlogical-op
+# Warn if a global function is defined without a previous declaration
 KBUILD_EXTRA_WARNINGS += -Wmissing-declarations
+# Warn if a function might be possible candidate for 'printf' or other format
+# attribute
 KBUILD_EXTRA_WARNINGS += -Wmissing-format-attribute
+# Warn if a user-supplied include directory does not exist
 KBUILD_EXTRA_WARNINGS += $(call cc-option, -Wmissing-include-dirs,)
+# Warn if a global function is defined without a previous prototype declaration
 KBUILD_EXTRA_WARNINGS += -Wmissing-prototypes
+# Warn if an extern declaration is encountered within a function
 KBUILD_EXTRA_WARNINGS += -Wnested-externs
 KBUILD_EXTRA_WARNINGS += -Wold-style-definition
+# Warn about string constants that are longer than the “minimum maximum” length
+# specified in the C standard. Modern compilers generally allow string constants
+# that are much longer than the standard’s minimum limit, but very portable
+# programs should avoid using longer strings.
 KBUILD_EXTRA_WARNINGS += $(call cc-option, -Woverlength-strings,)
+# Warn if a structure is given the packed attribute, but the packed attribute
+# has no effect on the layout or size of the structure
 KBUILD_EXTRA_WARNINGS += -Wpacked
+# The 4.1, 4.2 and 4.3 series of GCC ignore the packed attribute on bit-fields
+# of type char. This has been fixed in GCC 4.4 but the change can lead to
+# differences in the structure layout. GCC informs you when the offset of such a
+# field has changed in GCC 4.4. For example there is no longer a 4-bit padding
+# between field a and b in this structure:
+# struct foo {
+#	char a:4;
+#	char b:8;
+# } __attribute__ ((packed));
 KBUILD_EXTRA_WARNINGS += -Wpacked-bitfield-compat
+# Warn if padding is included in a structure, either to align an element of the
+# structure or to align the whole structure. Sometimes when this happens, it is
+# possible to rearrange the fields of the structure to reduce the padding and so
+# make the structure smaller
 KBUILD_EXTRA_WARNINGS += -Wpadded
+# Warn about anything that depends on the “size of” a function type or of void.
+# GNU C assigns these types a size of 1, for convenience in calculations with
+# void * pointers and pointers to functions
 KBUILD_EXTRA_WARNINGS += -Wpointer-arith
+# Warn if anything is declared more than once in the same scope, even in cases
+# where multiple declaration is valid and changes nothing
 KBUILD_EXTRA_WARNINGS += -Wredundant-decls
+# Warn whenever a local variable or type declaration shadows another variable
 KBUILD_EXTRA_WARNINGS += -Wshadow
+# Warn whenever a switch statement does not have a default case
 KBUILD_EXTRA_WARNINGS += -Wswitch-default
+# Warn if variable length array is used in the code
 KBUILD_EXTRA_WARNINGS += $(call cc-option, -Wvla,)
 KBUILD_CFLAGS += $(KBUILD_EXTRA_WARNINGS)
 endif

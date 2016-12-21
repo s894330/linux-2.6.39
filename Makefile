@@ -18,14 +18,15 @@ NAME = Flesh-Eating Bats with Fangs
 # 數中。
 # -r: no builtin rules
 # -R: no builtin variables
+# --no-print-directory: Turn off -w, even if it was turned on implicitly
 MAKEFLAGS += -rR --no-print-directory
 
 # Avoid funny character set dependencies
 # LC_ALL: 一次設定所有的locale環境
 # LC_COLLATE: 字元順序與字串比較
 # LC_NUMERIC: 數字顯式格式
-# 設定C local表示程式的表現會與傳統的 C 語言中一樣，使用英文做訊息輸出，只能處理
-# 英文等 ASCII 碼
+# 設定為 C local 表示程式的表現會與傳統的 C 語言中一樣，使用英文做訊息輸出，
+# 只能處理英文等 ASCII 碼
 unexport LC_ALL
 LC_COLLATE=C
 LC_NUMERIC=C
@@ -65,6 +66,8 @@ endif
 # Use 'make C=2' to enable checking of *all* source files, regardless
 # of whether they are re-compiled or not.
 #
+# default: disable checker
+#
 # See the file "Documentation/sparse.txt" for more details, including
 # where to get the "sparse" utility.
 
@@ -100,7 +103,6 @@ endif
 #
 # The O= assignment takes precedence over the KBUILD_OUTPUT environment
 # variable.
-
 
 # KBUILD_SRC is set on invocation of make in OBJ directory
 # KBUILD_SRC is not intended to be used by the regular user (for now)
