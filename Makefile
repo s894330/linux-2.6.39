@@ -125,6 +125,7 @@ _all:
 # Cancel implicit rules on top Makefile
 # 因為Makefile一定存在，防止make為了建造makefile而去尋找隱含命令，此舉可以增加
 # 效率
+# CURDIR變數代表目前make的工作目錄
 $(CURDIR)/Makefile Makefile: ;
 
 ifneq ($(KBUILD_OUTPUT),)
@@ -171,18 +172,16 @@ objtree		:= $(CURDIR)
 src		:= $(srctree)
 obj		:= $(objtree)
 
-# VPATH 為Makefile中所有文件的搜索路徑，包括規則的依賴文件和目標文件
+# VPATH 為Makefile中所有file的搜索路徑，包括規則的依賴文件和目標文件
 VPATH		:= $(srctree)$(if $(KBUILD_EXTMOD),:$(KBUILD_EXTMOD))
 
 export srctree objtree VPATH
-
 
 # SUBARCH tells the usermode build what the underlying arch is.  That is set
 # first, and if a usermode build is happening, the "ARCH=um" on the command
 # line overrides the setting of ARCH below.  If a native build is happening,
 # then ARCH is assigned, getting whatever value it gets normally, and 
 # SUBARCH is subsequently ignored.
-
 SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 				  -e s/arm.*/arm/ -e s/sa110/arm/ \
 				  -e s/s390x/s390/ -e s/parisc64/parisc/ \
@@ -191,8 +190,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 
 # Cross compiling and selecting different set of gcc/bin-utils
 # ---------------------------------------------------------------------------
-#
-# When performing cross compilation for other architectures ARCH shall be set
+# When performing cross compilation for other architectures, ARCH shall be set
 # to the target architecture. (See arch/* for the possibilities).
 # ARCH can be set during invocation of make:
 # make ARCH=ia64
@@ -260,10 +258,38 @@ HOSTCXX      = g++
 # -Wmissing-prototypes: Warn if a global function is defined without a previous
 # 			prototype declaration
 # -Wstrict-prototypes: Warn if a function is declared or defined without
-# 			specifying the argument types
+# 			specifying the argument types.
+# 			(An old-style function definition is permitted without
+# 			a warning if preceded by a declaration that specifies
+# 			the argument types.)
 # -std=gnu89: 使用c89規範加上gcc自己的擴展
+# -fomit-frame-pointer: Don’t keep the frame pointer in a register for functions
+# 			that don’t need one. This avoids the instructions to
+# 			save, set up and restore frame pointers; it also makes
+# 			an extra register available in many functions.
+# 			It also makes debugging impossible on some machines
+#			Starting with GCC version 4.6, the default setting
+#			(when not optimizing for size) for 32-bit GNU/Linux x86
+#			and 32-bit Darwin x86 targets has been changed to
+#			‘-fomit-frame-pointer’.
+#			This option is enabled at levels ‘-O’, ‘-O2’, ‘-O3’, ‘-Os’.
+#
+# P.S.: Optimizing compilation takes somewhat more time, and a lot more memory
+# for a large function
+#   -O0: Reduce compilation time and make debugging produce the expected results.
+#   	 This is the default
+#   -O/-O1: compiler tries to reduce code size and execution time, without
+#   	    performing any optimizations that take a great deal of compilation
+#   	    time
+#   -O2: performs nearly all supported optimizations that do not involve a
+#   	 space-speed tradeoff. As compared to ‘-O’, this option increases both
+#   	 compilation time and the performance of the generated code
+#   -O3: Optimize yet more
+#   -Os: Optimize for size. ‘-Os’ enables all ‘-O2’ optimizations that do not
+#        typically increase code size. It also performs further optimizations
+#        designed to reduce code size
 #HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -std=gnu89
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -fno-omit-frame-pointer -std=gnu89
 #HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
