@@ -70,7 +70,6 @@ endif
 #
 # See the file "Documentation/sparse.txt" for more details, including
 # where to get the "sparse" utility.
-
 ifeq ("$(origin C)", "command line")
   KBUILD_CHECKSRC = $(C)
 endif
@@ -294,7 +293,6 @@ HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -fno-omit-frame-po
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
-
 KBUILD_MODULES :=
 KBUILD_BUILTIN := 1
 
@@ -302,7 +300,11 @@ KBUILD_BUILTIN := 1
 #	When we're building modules with modversions, we need to consider
 #	the built-in objects during the descend as well, in order to
 #	make sure the checksums are up to date before we record them.
-
+#
+# When CONFIG_MODVERSIONS is turned on the kernel,  then a special piece of
+# versioning info is appended to every symbol exported using EXPORT_SYMBOL
+# Reference:
+#   http://www.voidcn.com/blog/yyyyyyyyyywwwwwwwwww/article/p-6147746.html
 ifeq ($(MAKECMDGOALS),modules)
   KBUILD_BUILTIN := $(if $(CONFIG_MODVERSIONS),1)
 endif
@@ -310,7 +312,6 @@ endif
 #	If we have "make <whatever> modules", compile modules
 #	in addition to whatever we do anyway.
 #	Just "make" or "make all" shall build modules as well
-
 ifneq ($(filter all _all modules,$(MAKECMDGOALS)),)
   KBUILD_MODULES := 1
 endif
@@ -344,7 +345,6 @@ export KBUILD_CHECKSRC KBUILD_SRC KBUILD_EXTMOD
 #
 # If KBUILD_VERBOSE equals 0 then the above command will be hidden.
 # If KBUILD_VERBOSE equals 1 then the above command is displayed.
-
 ifeq ($(KBUILD_VERBOSE),1)
   quiet =
   Q =
@@ -355,15 +355,14 @@ endif
 
 # If the user is running make -s (silent mode), suppress echoing of
 # commands
-
 ifneq ($(findstring s,$(MAKEFLAGS)),)
   quiet=silent_
 endif
 
 export quiet Q KBUILD_VERBOSE
 
-
 # Look for make include files relative to root of kernel src
+# Specifies a directory path to search for included makefiles.
 MAKEFLAGS += --include-dir=$(srctree)
 
 # We need some generic definitions (do not try to remake the file).
@@ -371,7 +370,6 @@ $(srctree)/scripts/Kbuild.include: ;
 include $(srctree)/scripts/Kbuild.include
 
 # Make variables (CC, etc...)
-
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
 CC		= $(CROSS_COMPILE)gcc
@@ -389,6 +387,7 @@ KALLSYMS	= scripts/kallsyms
 PERL		= perl
 CHECK		= sparse
 
+# make 的可选变量 CHECKFLAGS 可以用来向 sparse 工具传递参数。
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 CFLAGS_MODULE   =
@@ -396,11 +395,27 @@ AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
+# gcov is a test coverage program. Use it in concert with GCC to analyze your
+# programs to help create more efficient, faster running code.
+#
+# When using gcov, you must first compile your program with two special GNU CC
+# options: -fprofile-arcs -ftest-coverage. This tells the compiler to generate
+# additional information needed by gcov (basically a flow graph of the program)
+# and also includes additional code in the object files for generating the extra
+# profiling information needed by gcov. These additional files are placed in the
+# directory where the source code is located.
+#
+# Reference:
+# 	https://www.rpi.edu/dept/cis/software/g77-mingw32/info-html/gcov.html
+# 	https://gcc.gnu.org/onlinedocs/gcc/Gcov.html
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
+#
+# -include <file>: Process file as if #include "file" appeared as the first line
+# 		   of the primary source file.
 LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include -Iinclude \
                    $(if $(KBUILD_SRC), -I$(srctree)/include) \
                    -include include/generated/autoconf.h
@@ -435,6 +450,8 @@ KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
+# -T <scriptfile>: Use scriptfile as the linker script. This script replaces
+# 		   ld's default linker script
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
@@ -459,7 +476,6 @@ export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
 export MODVERDIR := $(if $(KBUILD_EXTMOD),$(firstword $(KBUILD_EXTMOD))/).tmp_versions
 
 # Files to ignore in find ... statements
-
 RCS_FIND_IGNORE := \( -name SCCS -o -name BitKeeper -o -name .svn -o -name CVS -o -name .pc -o -name .hg -o -name .git \) -prune -o
 export RCS_TAR_IGNORE := --exclude SCCS --exclude BitKeeper --exclude .svn --exclude CVS --exclude .pc --exclude .hg --exclude .git
 
@@ -493,7 +509,6 @@ endif
 # For example 'make oldconfig all'.
 # Detect when mixed targets is specified, and make a second invocation
 # of make so .config is not included in this case either (for *config).
-
 no-dot-config-targets := clean mrproper distclean \
 			 cscope gtags TAGS tags help %docs check% coccicheck \
 			 include/linux/version.h headers_% \
@@ -503,6 +518,7 @@ config-targets := 0
 mixed-targets  := 0
 dot-config     := 1
 
+# 如果 MAKECMDGOALS 只包含了no-dot-config-targets所含的目標，則 dot-config設為0
 ifneq ($(filter $(no-dot-config-targets), $(MAKECMDGOALS)),)
 	ifeq ($(filter-out $(no-dot-config-targets), $(MAKECMDGOALS)),)
 		dot-config := 0
@@ -621,16 +637,24 @@ endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
+# -Wframe-larger-than: Warn if the size of a function frame is larger than len
+# 		       bytes. The computation done to determine the stack frame
+# 		       size is approximate and not conservative. The actual
+# 		       requirements may be somewhat greater than len even if you
+# 		       do not get a warning
 ifneq ($(CONFIG_FRAME_WARN),0)
 KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
 endif
 
 # Force gcc to behave correct even for buggy distributions
+# -fno-stack-protector: Do not add extra code to check for buffer overflows,
+# 			such as stack smashing attacks
 ifndef CONFIG_CC_STACKPROTECTOR
 KBUILD_CFLAGS += $(call cc-option, -fno-stack-protector)
 endif
 
 ifdef CONFIG_FRAME_POINTER
+# -fno-optimize-sibling-calls: Do not optimize sibling and tail recursive calls
 KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
 else
 # Some targets (ARM with Thumb2, for example), can't be built with frame
@@ -644,7 +668,14 @@ endif
 endif
 
 ifdef CONFIG_DEBUG_INFO
+# -g: Produce debugging information in the operating system's native format
+#     (stabs, COFF, XCOFF, or DWARF). GDB can work with this debugging
+#     information
 KBUILD_CFLAGS	+= -g
+# -gdwarf-2: Produce debugging information in DWARF format (if that is supported).
+# 	     The value of version may be either 2, 3, 4 or 5; the default
+# 	     version for most targets is 4.
+# Reference: http://www.dwarfstd.org/doc/dwarf-2.0.0.pdf
 KBUILD_AFLAGS	+= -gdwarf-2
 endif
 
@@ -653,6 +684,9 @@ KBUILD_CFLAGS 	+= $(call cc-option, -femit-struct-debug-baseonly)
 endif
 
 ifdef CONFIG_FUNCTION_TRACER
+# -pg: Generate extra code to write profile information suitable for the
+#      analysis program gprof. You must use this option when compiling the
+#      source files you want data about, and you must also use it when linking
 KBUILD_CFLAGS	+= -pg
 ifdef CONFIG_DYNAMIC_FTRACE
 	ifdef CONFIG_HAVE_C_RECORDMCOUNT
@@ -664,6 +698,9 @@ endif
 
 # We trigger additional mismatches with less inlining
 ifdef CONFIG_DEBUG_SECTION_MISMATCH
+# -fno-inline-functions-called-once:
+# 	disable this => "Consider all static functions called once for inlining
+# 			into their caller even if they are not marked inline"
 KBUILD_CFLAGS += $(call cc-option, -fno-inline-functions-called-once)
 endif
 
