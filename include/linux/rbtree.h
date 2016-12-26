@@ -106,6 +106,11 @@ struct rb_node
 	struct rb_node *rb_left;
 } __attribute__((aligned(sizeof(long))));
     /* The alignment might seem pointless, but allegedly CRIS needs it */
+/* 
+ * CRIS is an acronym for 'Code Reduced Instruction Set'. It is the CPU
+ * architecture in Axis Communication AB's range of embedded network CPU's,
+ * called ETRAX.
+ */
 
 struct rb_root
 {
