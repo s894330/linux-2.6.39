@@ -395,6 +395,7 @@ AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
+
 # gcov is a test coverage program. Use it in concert with GCC to analyze your
 # programs to help create more efficient, faster running code.
 #
@@ -495,6 +496,10 @@ PHONY += outputmakefile
 # outputmakefile generates a Makefile in the output directory, if using a
 # separate output directory. This allows convenient use of make in the
 # output directory.
+#
+# -f: remove existing destination files
+# -s: make symbolic links instead of hard links
+# -n: treat LINK_NAME as a normal file if it is a symbolic link to a directory
 outputmakefile:
 ifneq ($(KBUILD_SRC),)
 	$(Q)ln -fsn $(srctree) source
@@ -542,7 +547,7 @@ ifeq ($(mixed-targets),1)
 %:: FORCE
 	$(Q)$(MAKE) -C $(srctree) KBUILD_SRC= $@
 
-else
+else # $(mixed-targets) = 0
 ifeq ($(config-targets),1)
 # ===========================================================================
 # *config targets only - make sure prerequisites are updated, and descend
@@ -562,7 +567,7 @@ config: scripts_basic outputmakefile FORCE
 	$(Q)mkdir -p include/linux include/config
 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
 
-else
+else # $(config-targets) = 0
 # ===========================================================================
 # Build targets only - this includes vmlinux, arch specific targets, clean
 # targets and others. In general all targets except *config targets.
@@ -581,7 +586,7 @@ drivers-y	:= drivers/ sound/ firmware/
 net-y		:= net/
 libs-y		:= lib/
 core-y		:= usr/
-endif # KBUILD_EXTMOD
+endif # KBUILD_EXTMOD = NULL
 
 ifeq ($(dot-config),1)
 # Read in config
@@ -602,7 +607,7 @@ $(KCONFIG_CONFIG) include/config/auto.conf.cmd: ;
 # we execute the config step to be sure to catch updated Kconfig files
 include/config/%.conf: $(KCONFIG_CONFIG) include/config/auto.conf.cmd
 	$(Q)$(MAKE) -f $(srctree)/Makefile silentoldconfig
-else
+else # $(KBUILD_EXTMOD) != NULL
 # external modules needs include/generated/autoconf.h and include/config/auto.conf
 # but do not care if they are up-to-date. Use auto.conf to trigger the test
 PHONY += include/config/auto.conf
@@ -618,7 +623,7 @@ include/config/auto.conf:
 
 endif # KBUILD_EXTMOD
 
-else
+else # $(dot-config) = 0
 # Dummy target needed, because used as prerequisite
 include/config/auto.conf: ;
 endif # $(dot-config)
@@ -632,7 +637,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O2
+# KBUILD_CFLAGS	+= -O2
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
