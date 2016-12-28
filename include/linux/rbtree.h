@@ -1,7 +1,7 @@
 /*
   Red Black Trees
   (C) 1999  Andrea Arcangeli <andrea@suse.de>
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
@@ -97,9 +97,8 @@ static inline struct page * rb_insert_page_cache(struct inode * inode,
 #include <linux/kernel.h>
 #include <linux/stddef.h>
 
-struct rb_node
-{
-	/* 
+struct rb_node {
+	/*
 	 * rb_parent_color儲存二種資訊: parent addr和color，使用最後一個bit存放
 	 * 顏色訊息, 因為struct rb_node的address會對齊<long>大小的邊界，因此
 	 * address的最後3個bit總是為0, 可以拿來使用
@@ -111,14 +110,13 @@ struct rb_node
 	struct rb_node *rb_left;
 } __attribute__((aligned(sizeof(long))));
     /* The alignment might seem pointless, but allegedly CRIS needs it */
-/* 
+/*
  * CRIS is an acronym for 'Code Reduced Instruction Set'. It is the CPU
  * architecture in Axis Communication AB's range of embedded network CPU's,
  * called ETRAX.
  */
 
-struct rb_root
-{
+struct rb_root {
 	struct rb_node *rb_node;
 };
 
@@ -139,7 +137,7 @@ static inline void rb_set_color(struct rb_node *rb, int color)
 	rb->rb_parent_color = (rb->rb_parent_color & ~1) | color;
 }
 
-/* 
+/*
  * add comma at last makes it easier to generate source code, and also to write
  * code which can be easily extended at a later date
  */
@@ -168,13 +166,13 @@ extern struct rb_node *rb_first(const struct rb_root *);
 extern struct rb_node *rb_last(const struct rb_root *);
 
 /* Fast replacement of a single node without remove/rebalance/add/rebalance */
-extern void rb_replace_node(struct rb_node *victim, struct rb_node *new, 
+extern void rb_replace_node(struct rb_node *victim, struct rb_node *new,
 			    struct rb_root *root);
 
 static inline void rb_link_node(struct rb_node *node, struct rb_node *parent,
 				struct rb_node **rb_link)
 {
-	node->rb_parent_color = (unsigned long )parent;
+	node->rb_parent_color = (unsigned long)parent;
 	node->rb_left = node->rb_right = NULL;
 
 	*rb_link = node;
