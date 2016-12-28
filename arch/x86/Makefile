@@ -46,13 +46,28 @@ else
         UTS_MACHINE := x86_64
         CHECKFLAGS += -D__x86_64__ -m64
 
+	# Generate code for a 32-bit or 64-bit environment. The ‘-m32’ option
+	# sets int, long, and pointer types to 32 bits, and generates code that
+	# runs on any i386 system.
+	# The ‘-m64’ option sets int to 32 bits and long and pointer types to
+	# 64 bits, and generates code for the x86-64 architecture
         KBUILD_AFLAGS += -m64
         KBUILD_CFLAGS += -m64
 
         # FIXME - should be integrated in Makefile.cpu (Makefile_32.cpu)
+	# -march=name: Specify the name of the target architecture, optionally
+	#	       suffixed by one or more feature modifiers.
+	#	       GCC uses this name to determine what kind of instructions
+	#	       it can emit when generating assembly code
         cflags-$(CONFIG_MK8) += $(call cc-option,-march=k8)
         cflags-$(CONFIG_MPSC) += $(call cc-option,-march=nocona)
 
+	# -mtune=name: Specify the name of the processor to tune the performance
+	#	       for. The code will be tuned as if the target processor
+	#	       were of the type specified in this option, but still
+	#	       using instructions compatible with the target processor
+	#	       specified by a ‘-mcpu=’ option. This option cannot be
+	#	       suffixed by feature modifiers
         cflags-$(CONFIG_MCORE2) += \
                 $(call cc-option,-march=core2,$(call cc-option,-mtune=generic))
 	cflags-$(CONFIG_MATOM) += $(call cc-option,-march=atom) \
@@ -60,18 +75,42 @@ else
         cflags-$(CONFIG_GENERIC_CPU) += $(call cc-option,-mtune=generic)
         KBUILD_CFLAGS += $(cflags-y)
 
+	# -mno-red-zone: Do not use a so-called “red zone” for x86-64 code.
+	#		 The red zone is mandated by the x86-64 ABI; it is a
+	#		 128-byte area beyond the location of the stack pointer
+	#		 that is not modified by signal or interrupt handlers
+	#		 and therefore can be used for temporary data without
+	#		 adjusting the stack pointer. The flag ‘-mno-red-zone’
+	#		 disables this red zone
+	# -mcmodel=kernel: Generate code for the kernel code model. The kernel
+	#		   runs in the negative 2 GB of the address space. This
+	#		   model has to be used for Linux kernel code
         KBUILD_CFLAGS += -mno-red-zone
         KBUILD_CFLAGS += -mcmodel=kernel
 
         # -funit-at-a-time shrinks the kernel .text considerably
         # unfortunately it makes reading oopses harder.
-        KBUILD_CFLAGS += $(call cc-option,-funit-at-a-time)
+	# it is enabled by default in gcc v4.8.4
+	#KBUILD_CFLAGS += $(call cc-option,-funit-at-a-time)
+        KBUILD_CFLAGS += $(call cc-option,-fno-unit-at-a-time)
 
         # this works around some issues with generating unwind tables in older gccs
         # newer gccs do it by default
-        KBUILD_CFLAGS += -maccumulate-outgoing-args
+	# If enabled, the maximum amount of space required for outgoing
+	# arguments is computed in the function prologue. This is faster on most
+	# modern CPUs because of reduced dependencies, improved scheduling and
+	# reduced stack usage when the preferred stack boundary is not equal to
+	# 2. The drawback is a notable increase in code size
+	#KBUILD_CFLAGS += -maccumulate-outgoing-args
 endif
 
+# -fstack-protector: Emit extra code to check for buffer overflows, such as
+#		     stack smashing attacks. This is done by adding a guard
+#		     variable to functions with vulnerable objects. The guards
+#		     are initialized when a function is entered and then checked
+#		     when the function exits. If a guard check fails, an error
+#		     message is printed and the program exits
+# reference: https://www.ibm.com/developerworks/cn/linux/l-cn-gccstack/
 ifdef CONFIG_CC_STACKPROTECTOR
 	cc_has_sp := $(srctree)/scripts/gcc-x86_$(BITS)-has-stack-protector.sh
         ifeq ($(shell $(CONFIG_SHELL) $(cc_has_sp) $(CC) $(KBUILD_CPPFLAGS) $(biarch)),y)
@@ -83,6 +122,10 @@ ifdef CONFIG_CC_STACKPROTECTOR
 endif
 
 # Don't unroll struct assignments with kmemcheck enabled
+# -fno-builtin-<func>: The ‘-fno-builtin-function’ option only the built-in
+#		       function function is disabled. function must not begin
+#		       with ‘__builtin_’. If a function is named that is not
+#		       built-in in this version of GCC, this option is ignored
 ifeq ($(CONFIG_KMEMCHECK),y)
 	KBUILD_CFLAGS += $(call cc-option,-fno-builtin-memcpy)
 endif
