@@ -99,6 +99,11 @@ static inline struct page * rb_insert_page_cache(struct inode * inode,
 
 struct rb_node
 {
+	/* 
+	 * rb_parent_color儲存二種資訊: parent addr和color，使用最後一個bit存放
+	 * 顏色訊息, 因為struct rb_node的address會對齊<long>大小的邊界，因此
+	 * address的最後3個bit總是為0, 可以拿來使用
+	 */
 	unsigned long  rb_parent_color;
 #define	RB_RED		0
 #define	RB_BLACK	1
@@ -117,7 +122,7 @@ struct rb_root
 	struct rb_node *rb_node;
 };
 
-
+/* 遮蔽掉最後2個bit(其中最後一個bit用來表示顏色)來取到address */
 #define rb_parent(r)   ((struct rb_node *)((r)->rb_parent_color & ~3))
 #define rb_color(r)   ((r)->rb_parent_color & 1)
 #define rb_is_red(r)   (!rb_color(r))
@@ -134,6 +139,10 @@ static inline void rb_set_color(struct rb_node *rb, int color)
 	rb->rb_parent_color = (rb->rb_parent_color & ~1) | color;
 }
 
+/* 
+ * add comma at last makes it easier to generate source code, and also to write
+ * code which can be easily extended at a later date
+ */
 #define RB_ROOT	(struct rb_root) { NULL, }
 #define	rb_entry(ptr, type, member) container_of(ptr, type, member)
 
@@ -162,8 +171,8 @@ extern struct rb_node *rb_last(const struct rb_root *);
 extern void rb_replace_node(struct rb_node *victim, struct rb_node *new, 
 			    struct rb_root *root);
 
-static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,
-				struct rb_node ** rb_link)
+static inline void rb_link_node(struct rb_node *node, struct rb_node *parent,
+				struct rb_node **rb_link)
 {
 	node->rb_parent_color = (unsigned long )parent;
 	node->rb_left = node->rb_right = NULL;
