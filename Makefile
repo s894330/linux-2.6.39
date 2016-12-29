@@ -637,7 +637,30 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
+# if we disable optimize(i.e. -O0), it will build error:
+# ======
+#  CC      arch/x86/kernel/process_64.o
+#  In file included from /opt/linux_kernel/linux-2.6.39/arch/x86/include/asm/alternative.h:105:0,
+#                   from /opt/linux_kernel/linux-2.6.39/arch/x86/include/asm/bitops.h:16,
+#                   from include/linux/bitops.h:22,
+#                   from include/linux/kernel.h:17,
+#                   from include/linux/sched.h:55,
+#                   from include/linux/stackprotector.h:5,
+#                   from arch/x86/kernel/process_64.c:17:
+# /opt/linux_kernel/linux-2.6.39/arch/x86/include/asm/cpufeature.h: In function ‘fpu_save_init’:
+# /opt/linux_kernel/linux-2.6.39/arch/x86/include/asm/cpufeature.h:323:3: warning: asm operand 0 probably doesn’t match constraints [enabled by default]
+#    asm goto("1: jmp %l[t_no]\n"
+#    ^
+# /opt/linux_kernel/linux-2.6.39/arch/x86/include/asm/cpufeature.h:323:3: error: impossible constraint in ‘asm’
+# make[3]: *** [arch/x86/kernel/process_64.o] Error 1
+# make[2]: *** [arch/x86/kernel] Error 2
+# make[1]: *** [arch/x86] Error 2
+# make[1]: Leaving directory `/opt/linux_kernel/linux-2.6.39'
+# make: *** [debian/stamp/build/kernel] Error 2
+# ======
+# so currently we use -O1 to work around this issue
 # KBUILD_CFLAGS	+= -O2
+KBUILD_CFLAGS	+= -O1
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
