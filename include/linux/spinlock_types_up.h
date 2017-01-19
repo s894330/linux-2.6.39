@@ -22,6 +22,13 @@ typedef struct {
 
 #else
 
+/* 
+ * empty struct is not C standard, because C structures have to contain at least
+ * one named member. But GNU GCC permits a C structure to have no members
+ *
+ * The purpose is to save some space without having to change the functions API
+ * It also allows to define dummy (zero-sized) objects of type arch_spinlock_t
+ */
 typedef struct { } arch_spinlock_t;
 
 #define __ARCH_SPIN_LOCK_UNLOCKED { }
