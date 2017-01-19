@@ -39,6 +39,19 @@ static inline void atomic_add(int i, atomic_t *v)
 	unsigned long tmp;
 	int result;
 
+	/*
+	 * "@" means this line is comment line
+	 * r是限制符（constraint），用來告訴編譯器gcc，你看著辦吧，你幫我選擇一
+	 * 個通用寄存器保存該操作數吧。"=&r" (result)，=表示該操作數是
+	 * write only的，&表示該操作數是一個earlyclobber operand，具體是什麼
+	 * 意思呢？編譯器在處理嵌入式彙編的時候，傾向使用盡可能少的寄存器，如果
+	 * output operand沒有&修飾的話，彙編指令中的input和output操作數會使用
+	 * 同樣一個寄存器。因此，&確保了％3和％0使用不同的寄存器。“I”這個限制符
+	 * 對應ARM平台，表示這是一個有特定限制的立即數，該數必須是0～255之間的
+	 * 一個整數通過rotation的操作得到的一個32bit的立即數
+	 *
+	 * Question: %2 沒用到, 為何要多宣告一個 +Qo (v->counter)?
+	 */
 	__asm__ __volatile__("@ atomic_add\n"
 "1:	ldrex	%0, [%3]\n"
 "	add	%0, %0, %4\n"
