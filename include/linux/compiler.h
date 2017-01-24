@@ -1,8 +1,16 @@
 #ifndef __LINUX_COMPILER_H
 #define __LINUX_COMPILER_H
 
+/* 
+ * this means the following definition only valid at compiling time, not
+ * at assembly time
+ */
 #ifndef __ASSEMBLY__
 
+/* 
+ * this is used for sparse tool (Semantic Parser for C), when make C=1 or C=2
+ * __CHECKER__ will be defined
+ */
 #ifdef __CHECKER__
 # define __user		__attribute__((noderef, address_space(1)))
 # define __kernel	__attribute__((address_space(0)))
@@ -23,7 +31,7 @@
 #endif
 extern void __chk_user_ptr(const volatile void __user *);
 extern void __chk_io_ptr(const volatile void __iomem *);
-#else
+#else	/* ifdef __CHECKER__ */
 # define __user
 # define __kernel
 # define __safe
@@ -142,7 +150,7 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
 	}))
 #endif /* CONFIG_PROFILE_ALL_BRANCHES */
 
-#else
+#else /* __KERNEL__ */
 # define likely(x)	__builtin_expect(!!(x), 1)
 # define unlikely(x)	__builtin_expect(!!(x), 0)
 #endif
